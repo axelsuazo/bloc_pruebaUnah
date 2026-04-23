@@ -1,45 +1,49 @@
-import { useState } from 'react';
-import Card from './components/Card';
+import { useState } from "react";
+import Card from "./components/Card";
+import Search from "./components/Search";
+import { posts } from "./data/posts";
 
-import Search from './components/Search';
-import { posts } from './data/posts';
-
- 
 function App() {
-  const [busqueda, setBusqueda] = useState('');
-  const [categoria, setCategoria] = useState('Todas');
+  const [busqueda, setBusqueda] = useState("");
+  const [categoria, setCategoria] = useState("Todas");
   const [pagina, setPagina] = useState(1);
-  const [postAbierto, setPostAbierto] = useState<any>(null);
+
+  
+  const [postAbierto, setPostAbierto] = useState<(typeof posts)[0] | null>(null);
 
   const porPagina = 8;
 
-  const categorias = [...new Set(posts.map((item) => item.category))];
+  const categorias = ["Todas", "React", "Diseño", "Programación", "Universidad"];
 
-  const filtrados = posts.filter((item) => {
-    const tituloCoincide = item.title
-      .toLowerCase()
-      .includes(busqueda.toLowerCase());
+  const postsFiltrados = posts.filter((post) => {
+    if (categoria !== "Todas" && post.category !== categoria) {
+      return false;
+    }
 
-    const categoriaCoincide =
-      categoria === 'Todas' || item.category === categoria;
+    if (!post.title.toLowerCase().includes(busqueda.toLowerCase())) {
+      return false;
+    }
 
-    return tituloCoincide && categoriaCoincide;
+    return true;
   });
 
-
   const inicio = (pagina - 1) * porPagina;
-  const visibles = filtrados.slice(inicio, inicio + porPagina);
+  const fin = inicio + porPagina;
+  const postsPagina = postsFiltrados.slice(inicio, fin);
 
-  function cambiarBusqueda(valor: string) {
+  const totalPaginas = Math.ceil(postsFiltrados.length / porPagina);
+
+  function buscar(valor: string) {
     setBusqueda(valor);
     setPagina(1);
   }
 
-  function cambiarCategoria(valor: string) {
+  function filtrar(valor: string) {
     setCategoria(valor);
     setPagina(1);
   }
 
+ 
   if (postAbierto) {
     return (
       <main className="bg-slate-100 px-4 py-10">
@@ -75,23 +79,23 @@ function App() {
             </button>
           </div>
         </section>
- 
       </main>
     );
   }
 
+ 
   return (
     <main className="bg-slate-100 py-10">
       <Search
         searchTerm={busqueda}
-        onSearchChange={cambiarBusqueda}
+        onSearchChange={buscar}
         selectedCategory={categoria}
-        onCategoryChange={cambiarCategoria}
+        onCategoryChange={filtrar}
         categories={categorias}
       />
 
       <section className="mx-auto max-w-6xl px-4">
-        {filtrados.length === 0 ? (
+        {postsFiltrados.length === 0 ? (
           <div className="rounded-2xl bg-white p-10 text-center shadow-md">
             <h2 className="text-2xl font-bold text-slate-800">
               No se encontraron posts
@@ -100,16 +104,37 @@ function App() {
         ) : (
           <>
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-              {visibles.map((item) => (
+              {postsPagina.map((post) => (
                 <Card
-                  key={item.id}
-                  post={item}
+                  key={post.id}
+                  post={post}
                   onReadMore={setPostAbierto}
                 />
               ))}
             </div>
 
-           
+          
+            <div className="mt-8 flex justify-center gap-3">
+              <button
+                onClick={() => setPagina(pagina - 1)}
+                disabled={pagina === 1}
+                className="rounded-lg bg-blue-900 px-4 py-2 text-white disabled:bg-gray-400"
+              >
+                Anterior
+              </button>
+
+              <span className="px-4 py-2">
+                Página {pagina} de {totalPaginas}
+              </span>
+
+              <button
+                onClick={() => setPagina(pagina + 1)}
+                disabled={pagina === totalPaginas}
+                className="rounded-lg bg-blue-900 px-4 py-2 text-white disabled:bg-gray-400"
+              >
+                Siguiente
+              </button>
+            </div>
           </>
         )}
       </section>
